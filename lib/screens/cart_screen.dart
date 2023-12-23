@@ -1,51 +1,63 @@
+
 import 'package:flutter/material.dart';
 
-class CartPage extends StatelessWidget {
+class AddToCartPage extends StatefulWidget {
+  final List<Map<String, dynamic>> cartItems;
+
+  AddToCartPage({required this.cartItems});
+
+  @override
+  _AddToCartPageState createState() => _AddToCartPageState();
+}
+
+class _AddToCartPageState extends State<AddToCartPage> {
+  List<Map<String, dynamic>> cartItems = [];
+
+  @override
+  void initState() {
+    super.initState();
+    cartItems = widget.cartItems.toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>>? cart =
-    ModalRoute.of(context)?.settings.arguments as List<Map<String, dynamic>>?;
-
-    int total = 0;
-    cart?.forEach((item) {
-      total += item['price'] as int;
-    });
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Cart'),
       ),
       body: ListView.builder(
-        itemCount: cart?.length ?? 0,
+        itemCount: cartItems.length,
         itemBuilder: (context, index) {
-          return Card(
-            elevation: 4,
-            child: ListTile(
-              title: SizedBox(
-                width: 300,
-                height: 300,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    cart![index]['image'],
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              subtitle: Text('Price: \$${cart[index]['price']}'),
+          final imageUrl = cartItems[index]['image'];
+          final price = cartItems[index]['price'];
+          return ListTile(
+            title: Image.network(imageUrl),
+            subtitle: Text('Price: \$ $price'),
+            trailing: IconButton(
+              icon: Icon(Icons.delete),
+              onPressed: () {
+                setState(() {
+                  cartItems.removeAt(index);
+                });
+              },
             ),
           );
         },
       ),
       bottomNavigationBar: BottomAppBar(
-        child: Container(
-          margin: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
           child: Text(
-            'Total: \$${total.toStringAsFixed(2)}',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            'Total: \$ ${calculateTotal(cartItems)}',
+            style: TextStyle(fontSize: 18.0),
           ),
         ),
       ),
     );
   }
+
+  int calculateTotal(List<Map<String, dynamic>> cartItems) {
+    return cartItems.fold(0, (previousValue, item) => previousValue + (item['price'] as int));
+  }
+
 }

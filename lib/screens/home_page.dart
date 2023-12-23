@@ -1,120 +1,123 @@
+// home_page.dart
 import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'cart_screen.dart';
 
+class HomePage extends StatefulWidget {
+  final Function(String, int) onUpdateHistory;
 
-class DogImagePage extends StatefulWidget {
+  HomePage({required this.onUpdateHistory});
+
   @override
-  _DogImagePageState createState() => _DogImagePageState();
+  _HomePageState createState() => _HomePageState();
 }
 
-class _DogImagePageState extends State<DogImagePage> {
+class _HomePageState extends State<HomePage> {
   String imageUrl = '';
-  List<Map<String, dynamic>> history = [];
-  List<Map<String, dynamic>> cart = [];
+  List<Map<String, dynamic>> cartItems = [];
+  Random random = Random();
 
-  @override
-  void initState() {
-    super.initState();
-    _fetchDogImage();
-  }
-
-  Future<void> _fetchDogImage() async {
-    final response =
-    await http.get(Uri.parse('https://dog.ceo/api/breeds/image/random'));
-    if (response.statusCode == 200) {
-      final responseData = json.decode(response.body);
-      setState(() {
-        imageUrl = responseData['message'];
-        history.add({'image': imageUrl}); // Update to store as a map in history
-      });
-    } else {
-      print('Failed to load image: ${response.statusCode}');
+  Future<void> fetchRandomDogImage() async {
+    try {
+      final response = await http.get(Uri.parse('https://dog.ceo/api/breeds/image/random'));
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final imageUrl = data['message'];
+        setState(() {
+          this.imageUrl = imageUrl;
+          widget.onUpdateHistory(imageUrl, generateRandomPrice());
+        });
+      } else {
+        // Handle the error gracefully (e.g., show a snackbar or log the error).
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load image'),
+          ),
+        );
+      }
+    } catch (error) {
+      // Handle other exceptions if necessary.
+      print('Error fetching image: $error');
     }
   }
 
-  void _addToCart() {
-    Random random = Random();
-    int price = random.nextInt(451) + 50;
-
-    cart.add({'image': imageUrl, 'price': price});
-
+  void addToCart(String imageUrl) {
+    final price = generateRandomPrice();
+    setState(() {
+      cartItems.add({'image': imageUrl, 'price': price});
+    });
+    widget.onUpdateHistory(imageUrl, price);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Added to Cart'),
-        duration: Duration(seconds: 1),
+        content: Text('Image added to cart!'),
       ),
     );
   }
 
+  int generateRandomPrice() {
+    return ((random.nextInt(45) + 5) * 10);
+  }
+
   @override
   Widget build(BuildContext context) {
-    Random random = Random();
-    int price = random.nextInt(451) + 50;
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Random Dog Image'),
-        actions: [
+        actions: <Widget>[
           IconButton(
             icon: Icon(Icons.history),
             onPressed: () {
-              Navigator.pushNamed(context, '/history', arguments: history);
+              Navigator.pushNamed(context, '/history');
             },
           ),
           IconButton(
             icon: Icon(Icons.shopping_cart),
             onPressed: () {
-              Navigator.pushNamed(context, '/cart', arguments: cart);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddToCartPage(cartItems: cartItems),
+                ),
+              );
             },
           ),
         ],
       ),
       body: Center(
-        child: imageUrl.isEmpty
-            ? CircularProgressIndicator()
-            : Column(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Card(
-              elevation: 4,
-              child: SizedBox(
-                width: 300,
-                height: 300,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
+            imageUrl.isEmpty
+                ? CircularProgressIndicator()
+                : Image.network(
+              imageUrl,
+              width: 300,
+              height: 300,
+              fit: BoxFit.cover,
             ),
             SizedBox(height: 20),
-            Text(
-              'Price: \$${price.toString()}',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ElevatedButton(
+              onPressed: () {
+                addToCart(imageUrl);
+              },
+              child: Text('Add to Cart'),
             ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _fetchDogImage();
-        },
+        onPressed: fetchRandomDogImage,
         tooltip: 'Fetch',
         child: Icon(Icons.refresh),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       bottomNavigationBar: BottomAppBar(
-        child: Container(
-          margin: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: ElevatedButton(
-            onPressed: () {
-              _addToCart();
-            },
-            child: Text('Add to Cart'),
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text(
+            'Price: \$ ${generateRandomPrice()}',
+            style: TextStyle(fontSize: 18.0),
           ),
         ),
       ),
