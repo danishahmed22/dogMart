@@ -1,4 +1,3 @@
-// main.dart
 import 'package:flutter/material.dart';
 import 'screens/cart_screen.dart';
 import 'screens/history_page.dart';

@@ -30,7 +30,6 @@ class _HomePageState extends State<HomePage> {
           widget.onUpdateHistory(imageUrl, generateRandomPrice());
         });
       } else {
-        // Handle the error gracefully (e.g., show a snackbar or log the error).
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to load image'),
@@ -38,7 +37,6 @@ class _HomePageState extends State<HomePage> {
         );
       }
     } catch (error) {
-      // Handle other exceptions if necessary.
       print('Error fetching image: $error');
     }
   }
